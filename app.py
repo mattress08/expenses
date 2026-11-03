@@ -1,22 +1,68 @@
 import calendar
 import json
+import os
 import re
+import secrets
 import sqlite3
+import time
 from contextlib import contextmanager
 from datetime import date, timedelta
 from pathlib import Path
 
-from flask import Flask, abort, flash, redirect, render_template, request, url_for
+from flask import Flask, abort, flash, redirect, render_template, request, session, url_for
+from werkzeug.security import check_password_hash
 
 app = Flask(__name__)
-app.config["DATABASE"] = str(Path(__file__).with_name("expenses.db"))
-app.config["SECRET_KEY"] = "local-only"  # only signs flash messages; app is meant for localhost
+app.config.update(
+    DATABASE=str(Path(__file__).with_name("expenses.db")),
+    # Hosted: both come from the server's environment (see DEPLOY.md). Local: python app.py needs neither.
+    SECRET_KEY=os.environ.get("EXPENSES_SECRET_KEY", "local-only"),
+    PASSWORD_HASH=os.environ.get("EXPENSES_PASSWORD_HASH"),
+    LOGIN_REQUIRED=True,  # the `python app.py` block at the bottom turns this off for the laptop
+    CSRF_ENABLED=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE="EXPENSES_SECRET_KEY" in os.environ,  # hosted runs on https; the laptop on http
+    PERMANENT_SESSION_LIFETIME=timedelta(days=30),
+)
 app.jinja_env.filters["yen"] = lambda n: yen(n)
 app.jinja_env.filters["month_name"] = lambda m: date.fromisoformat(m + "-01").strftime("%B %Y")
 app.jinja_env.filters["short_month"] = lambda m: date.fromisoformat(m + "-01").strftime("%b %Y")  # Oct 2026
 app.jinja_env.filters["short_date"] = lambda d: date.fromisoformat(d).strftime("%b ") + str(int(d[8:10]))  # Oct 3
 
 MONTH_RE = r"\d{4}-(0[1-9]|1[0-2])"
+
+# shortcut: login lockout lives in this process's memory and is keyed by the address Flask sees (behind a
+# host's proxy that is one address for everyone, so 5 wrong passwords lock all logins for 15 minutes).
+# Fine for one owner on one worker; move it to the database if the host runs several workers.
+FAILED_LOGINS = {}
+LOCKOUT_AFTER, LOCKOUT_SECONDS = 5, 15 * 60
+
+
+def csrf_token():
+    if "csrf" not in session:
+        session["csrf"] = secrets.token_urlsafe(32)
+    return session["csrf"]
+
+
+app.jinja_env.globals["csrf_token"] = csrf_token
+
+
+@app.before_request
+def guard():
+    """Hosted: refuse to run unconfigured, require the login. Everywhere: every POST carries the form token."""
+    if request.endpoint == "static":
+        return None
+    if app.config["LOGIN_REQUIRED"]:
+        if not app.config["PASSWORD_HASH"] or app.config["SECRET_KEY"] == "local-only":
+            return "Not configured: set EXPENSES_PASSWORD_HASH and EXPENSES_SECRET_KEY (see DEPLOY.md).", 503
+        if not session.get("user") and request.endpoint != "login":
+            nxt = request.full_path.rstrip("?") if request.method == "GET" else None
+            return redirect(url_for("login", next=nxt))
+    if request.method == "POST" and app.config["CSRF_ENABLED"]:
+        sent, expected = request.form.get("csrf", ""), session.get("csrf", "")
+        if not sent or not expected or not secrets.compare_digest(sent, expected):
+            abort(400, "The form expired. Go back, reload the page and try again.")
+    return None
 
 
 @contextmanager
@@ -320,5 +366,36 @@ def undo():
     return redirect(url_for("index", month=last["month"]))
 
 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if not app.config["LOGIN_REQUIRED"]:
+        return redirect(url_for("index"))
+    error, now, who = None, time.time(), request.remote_addr
+    count, locked_until = FAILED_LOGINS.get(who, (0, 0))
+    if request.method == "POST":
+        if now < locked_until:
+            error = "Too many wrong passwords. Try again in 15 minutes."
+        elif check_password_hash(app.config["PASSWORD_HASH"], request.form.get("password", "")):
+            FAILED_LOGINS.pop(who, None)
+            session.clear()  # new session on login, so a token set before it is never reused
+            session["user"] = True
+            session.permanent = True
+            nxt = request.args.get("next", "")
+            # only same-site paths, never //host or a full URL
+            return redirect(nxt if nxt.startswith("/") and not nxt.startswith("//") else url_for("index"))
+        else:
+            count += 1
+            FAILED_LOGINS[who] = (0, now + LOCKOUT_SECONDS) if count >= LOCKOUT_AFTER else (count, 0)
+            error = "Wrong password."
+    return render_template("login.html", error=error, bare=True), 401 if error else 200
+
+
+@app.post("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+
 if __name__ == "__main__":
-    app.run(debug=True)  # binds 127.0.0.1 only
+    app.config["LOGIN_REQUIRED"] = False  # on the laptop, at 127.0.0.1, there is no one else to keep out
+    app.run(debug=True)  # binds 127.0.0.1 only; debug never runs on the host, which imports `app` instead

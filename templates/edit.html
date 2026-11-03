@@ -11,6 +11,7 @@
   <h1>Edit purchase</h1>
   <p class="meta">In {{ month | month_name }}. Saving takes you to the month of its date.</p>
   <form method="post">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
     <div class="editform">
       <label>Date <input name="date" type="date" value="{{ e.date }}" required></label>
       <label>Name <input name="name" value="{{ e.name }}" required autofocus></label>

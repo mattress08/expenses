@@ -15,7 +15,7 @@ class ExpenseTest(unittest.TestCase):
     def setUp(self):
         fd, self.path = tempfile.mkstemp(suffix=".db")
         os.close(fd)
-        app.config["DATABASE"] = self.path
+        app.config.update(DATABASE=self.path, LOGIN_REQUIRED=False, CSRF_ENABLED=False)  # laptop mode
         self.client = app.test_client()
 
     def tearDown(self):
@@ -194,6 +194,74 @@ class ExpenseTest(unittest.TestCase):
                                 ("matsuya", "food", "2026-10-02", 850, "")])
         self.assertEqual(len(errors), 1)
         self.assertIn("J5", errors[0])
+
+
+class HostedSecurityTest(unittest.TestCase):
+    """The hosted app: login required, every POST needs the form token."""
+
+    def setUp(self):
+        from werkzeug.security import generate_password_hash
+        import app as app_module
+
+        fd, self.path = tempfile.mkstemp(suffix=".db")
+        os.close(fd)
+        app_module.FAILED_LOGINS.clear()
+        self.saved = dict(app.config)
+        app.config.update(DATABASE=self.path, LOGIN_REQUIRED=True, CSRF_ENABLED=True, SECRET_KEY="test-secret",
+                          PASSWORD_HASH=generate_password_hash("correct horse"))
+        self.client = app.test_client()
+
+    def tearDown(self):
+        app.config.clear()
+        app.config.update(self.saved)
+        os.remove(self.path)
+
+    def token(self, path="/login"):
+        page = self.client.get(path).get_data(as_text=True)
+        return re.search(r'name="csrf" value="([^"]+)"', page).group(1)
+
+    def log_in(self, password="correct horse", next_=""):
+        return self.client.post("/login" + next_, data={"password": password, "csrf": self.token()})
+
+    def test_everything_needs_login_and_login_page_shows_no_data(self):
+        for path in ("/", "/dashboard?month=all", "/edit/1"):
+            resp = self.client.get(path)
+            self.assertEqual(resp.status_code, 302, path)
+            self.assertIn("/login", resp.headers["Location"])
+        page = self.client.get("/login").get_data(as_text=True)
+        self.assertNotIn('class="rail"', page)  # no month totals before login
+        self.assertEqual(self.client.post("/add", data={"name": "x"}).status_code, 302)  # no write without login
+
+    def test_login_logout_and_safe_redirect(self):
+        self.assertEqual(self.log_in("wrong").status_code, 401)
+        resp = self.log_in(next_="?next=/dashboard?month=all")
+        self.assertTrue(resp.headers["Location"].endswith("/dashboard?month=all"))
+        self.assertEqual(self.client.get("/").status_code, 200)
+        self.assertIn("Log out", self.client.get("/").get_data(as_text=True))
+        self.client.post("/logout", data={"csrf": self.token("/")})
+        self.assertEqual(self.client.get("/").status_code, 302)
+        resp = self.log_in(next_="?next=//evil.example/")
+        self.assertFalse(resp.headers["Location"].startswith("//evil"))  # never off-site
+
+    def test_post_without_or_with_wrong_token_is_rejected(self):
+        self.log_in()
+        form = {"name": "Matsuya", "classification": "food", "date": "2026-10-02", "amount": "850", "notes": ""}
+        self.assertEqual(self.client.post("/add", data=form).status_code, 400)
+        self.assertEqual(self.client.post("/add", data={**form, "csrf": "forged"}).status_code, 400)
+        self.assertEqual(self.client.post("/add", data={**form, "csrf": self.token("/")}).status_code, 302)
+
+    def test_lockout_after_five_wrong_passwords(self):
+        for _ in range(5):
+            self.log_in("wrong")
+        resp = self.log_in()  # right password, but locked
+        self.assertEqual(resp.status_code, 401)
+        self.assertIn("Too many wrong passwords", resp.get_data(as_text=True))
+
+    def test_refuses_to_run_unconfigured(self):
+        app.config.update(PASSWORD_HASH=None)
+        self.assertEqual(self.client.get("/").status_code, 503)
+        app.config.update(PASSWORD_HASH="x", SECRET_KEY="local-only")
+        self.assertEqual(self.client.get("/login").status_code, 503)
 
 
 if __name__ == "__main__":

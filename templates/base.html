@@ -104,11 +104,16 @@
       :root { --fs-figure: 40px; }
       .cmp { text-align: left; }
     }
+    body.bare { display: block; }
+    .logout { margin: 28px 0 0; padding: 0 28px; }
+    .logout button { background: none; border: 0; padding: 0; color: var(--cover-ink-2); text-decoration: underline; text-underline-offset: 3px; }
+    .logout button:hover { color: var(--cover-ink); }
     {% block style %}{% endblock %}
   </style>
 </head>
-<body>
+<body{% if bare %} class="bare"{% endif %}>
   {% set dash = request.endpoint == 'dashboard' %}
+  {% if not bare %}
   <aside class="rail">
     <a class="brand" href="{{ url_for('index') }}">Expenses</a>
     <nav aria-label="Pages">
@@ -123,10 +128,18 @@
         <span>{{ m.month | short_month }}</span><span>{{ m.total | yen }}</span></a></li>
       {% endfor %}
     </ul>
+    {% if config.LOGIN_REQUIRED and session.user %}
+    <form class="logout" method="post" action="{{ url_for('logout') }}">
+      <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+      <button type="submit">Log out</button>
+    </form>
+    {% endif %}
   </aside>
+  {% endif %}
   <main>
-    {% if last_change %}
+    {% if last_change and not bare %}
     <form class="undo" method="post" action="{{ url_for('undo') }}">
+      <input type="hidden" name="csrf" value="{{ csrf_token() }}">
       <span>Last change: {{ last_change.label }}</span>
       <button class="textbtn" type="submit">Undo</button>
     </form>

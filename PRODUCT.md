@@ -23,7 +23,7 @@ A personal ledger shaped exactly like the owner's own habit: one row per card pu
 - Purchases come from Citibank emails; the owner types name and classification themselves, since the email lacks them.
 - Typical places: Matsuya, Fuji Mart, Tokyu, coin laundry, PASMO/Suica top-ups, Amazon, school cafeteria.
 - Review happens per month, mirroring the old sheet's one-block-per-month layout, with an all-time view on the dashboard.
-- Runs locally on the owner's laptop (Flask on 127.0.0.1); never on a network.
+- Runs on the owner's laptop (`python app.py`, 127.0.0.1, no login) and hosted on PythonAnywhere behind a single password login (see DEPLOY.md). Spending data never goes into git.
 
 ## Capabilities and Constraints
 
