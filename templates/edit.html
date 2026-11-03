@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Edit {{ e.name }}{% endblock %}
+{% block style %}
+  .editform { display: grid; grid-template-columns: 150px minmax(0, 2fr) minmax(0, 1.2fr) 130px minmax(0, 2fr); gap: 12px;
+              background: var(--fresh); padding: 20px; border-top: 2px solid var(--cover); margin-top: 20px; }
+  .editform label { display: flex; flex-direction: column; gap: 6px; font-weight: 700; color: var(--ink-2); }
+  .actions { display: flex; align-items: center; gap: 16px; margin-top: 16px; }
+  @media (max-width: 1000px) { .editform { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+{% endblock %}
+{% block content %}
+  <h1>Edit purchase</h1>
+  <p class="meta">In {{ month | month_name }}. Saving takes you to the month of its date.</p>
+  <form method="post">
+    <div class="editform">
+      <label>Date <input name="date" type="date" value="{{ e.date }}" required></label>
+      <label>Name <input name="name" value="{{ e.name }}" required autofocus></label>
+      <label>Classification <input name="classification" value="{{ e.classification }}" list="classes" required></label>
+      <label>Amount (¥) <input name="amount" value="{{ e.amount }}" inputmode="numeric" pattern="[0-9,]+" required></label>
+      <label>Notes <input name="notes" value="{{ e.notes }}"></label>
+    </div>
+    <datalist id="classes">{% for c in classes %}<option value="{{ c }}">{% endfor %}</datalist>
+    <div class="actions">
+      <button class="btn" type="submit">Save</button>
+      <a href="{{ url_for('index', month=month) }}">Cancel</a>
+    </div>
+  </form>
+{% endblock %}

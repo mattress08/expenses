@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% from "_monthnav.html" import monthnav %}
+{% block title %}{{ month | month_name }}{% endblock %}
+{% block style %}
+  /* one printed line per purchase: fixed columns, notes take the slack */
+  .book { table-layout: fixed; min-width: 960px; }
+  .book .col-date { width: 156px; }
+  .book .col-name { width: 224px; }
+  .book .col-class { width: 148px; }
+  .book .col-amt { width: 104px; }
+  .book .col-run { width: 124px; }
+  .book .col-act { width: 116px; text-align: right; white-space: nowrap; }
+  .book tbody td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .book tbody td.c-name, .book tbody td.c-class { white-space: normal; }  /* fields that tell purchases apart wrap, never cut */
+  .book td.c-notes { color: var(--ink-2); }
+  .act { display: inline-flex; gap: 2px; align-items: center; }
+  .act form { margin: 0; }
+  .act a { padding: 4px 6px; }
+  .entry td { background: var(--fresh); border-top: 2px solid var(--cover); border-bottom: 0; padding: 10px 6px; overflow: visible; }
+  .entry td:first-child { padding-left: 14px; }
+  .entry input { padding: 7px; }
+  .entry input[type="date"] { padding: 7px 4px; }
+  .entry input[type="date"]::-webkit-calendar-picker-indicator { margin-left: 0; padding: 0; width: 12px; }
+  .empty td { padding: 28px 14px; color: var(--ink-2); white-space: normal; }
+  .foot { display: flex; justify-content: flex-end; margin-top: 16px; }
+  .foot form { margin: 0; }
+  .classes { font-weight: 700; }
+
+  /* row actions stay quiet until the row is pointed at or focused; always shown on touch */
+  @media (hover: hover) and (min-width: 821px) {
+    .book tbody .act { opacity: 0; transition: opacity 120ms ease-out; }
+    .book tbody tr:hover .act, .book tbody tr:focus-within .act { opacity: 1; }
+  }
+
+  /* signature: the new purchase prints across its line, column by column, like the passbook printer head */
+  .printed td { background: var(--fresh); animation: print 90ms steps(4, end) backwards; }
+  .printed td:nth-child(2) { animation-delay: 70ms; }
+  .printed td:nth-child(3) { animation-delay: 140ms; }
+  .printed td:nth-child(4) { animation-delay: 210ms; }
+  .printed td:nth-child(5) { animation-delay: 280ms; }
+  .printed td:nth-child(6) { animation-delay: 350ms; }
+  .printed td:nth-child(7) { animation-delay: 420ms; }
+  @keyframes print { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+  @media (prefers-reduced-motion: reduce) { .printed td { animation: none; } }
+
+  /* phone: each purchase becomes a stacked passbook line, amounts always in view */
+  @media (max-width: 820px) {
+    .book { min-width: 0; table-layout: auto; }
+    .book thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+    .book, .book tbody, .book tfoot, .book tr, .book td { display: block; }
+    .book tbody td { white-space: normal; overflow: visible; padding: 0; border: 0; }
+    .book tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; padding: 12px 14px;
+                     border-bottom: 1px solid var(--rule);
+                     grid-template-areas: "date act" "name amt" "class run" "notes notes"; }
+    .c-date { grid-area: date; color: var(--ink-2); } .c-name { grid-area: name; font-weight: 700; }
+    .c-class { grid-area: class; color: var(--ink-2); } .c-amt { grid-area: amt; font-weight: 700; }
+    .c-run { grid-area: run; } .c-run::before { content: "running "; }
+    .c-notes { grid-area: notes; } .book .col-act { grid-area: act; }
+    .book tbody tr.empty { display: block; padding: 20px 14px; }
+    .book tbody tr.entry { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; padding: 14px;
+                           border-top: 2px solid var(--cover); background: var(--fresh);
+                           grid-template-areas: "date amt" "name name" "class class" "notes notes" "act act"; }
+    .entry td { border: 0; padding: 0; } .entry .c-run { display: none; }
+    .entry .btn { width: 100%; padding: 10px; }
+    .book tfoot tr { display: flex; justify-content: space-between; padding: 10px 14px; background: var(--ink); }
+    .book tfoot td { padding: 0; } .book tfoot td:empty { display: none; }
+    .foot { justify-content: flex-start; }
+  }
+{% endblock %}
+{% block content %}
+  {{ monthnav('index', month) }}
+
+  <header class="head">
+    <div>
+      <h1>{{ month | month_name }}</h1>
+      <p class="figure" id="figure" data-total="{{ total }}">{{ total | yen }}</p>
+      <p class="meta">
+        {{ rows | length }} purchase{{ '' if rows | length == 1 else 's' }}{% for c in by_class[:3] %} · <span class="classes">{{ c.classification }}</span> {{ c.total | yen }}{% endfor %}
+      </p>
+    </div>
+    <p class="cmp">
+      {% if not total %}
+        <strong>Nothing yet</strong>{{ cmp.prev_total | yen }} in {{ cmp.prev_month | month_name }}{% if cmp.is_current %}, first {{ cmp.days }} days{% endif %}
+      {% elif cmp.change is none %}
+        <strong>Nothing to compare</strong>no purchases in {{ cmp.prev_month | month_name }}{% if cmp.is_current %} by day {{ cmp.days }}{% endif %}
+      {% else %}
+        <strong>{{ '+' if cmp.change > 0 else ('−' if cmp.change < 0 else '') }}{{ cmp.change | abs }}%</strong>
+        vs {{ cmp.prev_total | yen }} in {{ cmp.prev_month | month_name }}{% if cmp.is_current %}, first {{ cmp.days }} days{% endif %}
+      {% endif %}
+    </p>
+  </header>
+
+  <form id="add" method="post" action="{{ url_for('add') }}">
+    <input type="hidden" name="month" value="{{ month }}">
+  </form>
+  <datalist id="classes">{% for c in classes %}<option value="{{ c }}">{% endfor %}</datalist>
+
+  <div class="sheet">
+  <table class="book">
+    <caption class="visually-hidden">Purchases in {{ month | month_name }}, oldest first, with the running total for the month</caption>
+    <thead><tr>
+      <th scope="col" class="col-date">Date</th><th scope="col" class="col-name">Name</th><th scope="col" class="col-class">Classification</th>
+      <th scope="col" class="num col-amt">Amount</th><th scope="col" class="num col-run">Running total</th>
+      <th scope="col">Notes</th><th scope="col" class="col-act"><span class="visually-hidden">Actions</span></th>
+    </tr></thead>
+    <tbody>
+    {% for r, running in rows %}
+      <tr {% if r.id == printed_id %}class="printed" data-amount="{{ r.amount }}"{% endif %}>
+        <td class="c-date">{{ r.date | short_date }}</td>
+        <td class="c-name" title="{{ r.name }}">{{ r.name }}</td>
+        <td class="c-class">{{ r.classification }}</td>
+        <td class="num c-amt">{{ r.amount | yen }}</td>
+        <td class="num quiet c-run">{{ running | yen }}</td>
+        <td class="c-notes" {% if r.notes %}title="{{ r.notes }}"{% endif %}>{{ r.notes }}</td>
+        <td class="col-act"><span class="act">
+          <a href="{{ url_for('edit', expense_id=r.id) }}" aria-label="Edit {{ r.name }}, {{ r.date }}">Edit</a>
+          <form method="post" action="{{ url_for('delete', expense_id=r.id) }}"
+                onsubmit='return confirm({{ ("Delete " ~ r.name ~ " (" ~ (r.amount | yen) ~ ", " ~ r.date ~ ")? You can undo this.") | tojson }})'>
+            <input type="hidden" name="month" value="{{ month }}">
+            <button class="textbtn danger" type="submit" aria-label="Delete {{ r.name }}, {{ r.date }}">Delete</button>
+          </form>
+        </span></td>
+      </tr>
+    {% else %}
+      <tr class="empty"><td colspan="7">Nothing printed on this page yet. Enter the first purchase below.</td></tr>
+    {% endfor %}
+      <tr class="entry" id="entry">
+        <td class="c-date"><label class="visually-hidden" for="e-date">Date</label>
+            <input id="e-date" form="add" name="date" type="date" value="{{ entry.date }}" required></td>
+        <td class="c-name"><label class="visually-hidden" for="e-name">Name</label>
+            <input id="e-name" form="add" name="name" value="{{ entry.name }}" placeholder="Name" required {% if printed_id or entry.name is defined %}autofocus{% endif %}></td>
+        <td class="c-class"><label class="visually-hidden" for="e-class">Classification</label>
+            <input id="e-class" form="add" name="classification" value="{{ entry.classification }}" list="classes" placeholder="e.g. food" required></td>
+        <td class="c-amt"><label class="visually-hidden" for="e-amount">Amount in yen</label>
+            <input id="e-amount" form="add" name="amount" value="{{ entry.amount }}" inputmode="numeric" pattern="[0-9,]+" placeholder="¥" required></td>
+        <td class="c-run"></td>
+        <td class="c-notes"><label class="visually-hidden" for="e-notes">Notes</label>
+            <input id="e-notes" form="add" name="notes" value="{{ entry.notes }}" placeholder="Notes"></td>
+        <td class="col-act"><button class="btn" form="add" type="submit">Print</button></td>
+      </tr>
+    </tbody>
+    {% if rows %}
+    {# the page closes on the balance, in the running-total column #}
+    <tfoot><tr><td colspan="4">{{ month | month_name }} total</td><td class="num">{{ total | yen }}</td><td colspan="2"></td></tr></tfoot>
+    {% endif %}
+  </table>
+  </div>
+
+  {% if rows %}
+  <div class="foot">
+    <form method="post" action="{{ url_for('delete_month', month=month) }}"
+          onsubmit='return confirm({{ ("Delete ALL " ~ (rows | length) ~ " expenses in " ~ (month | month_name) ~ " (" ~ (total | yen) ~ ")? You can undo this.") | tojson }})'>
+      <button class="textbtn danger" type="submit">Delete all {{ rows | length }} purchases in {{ month | month_name }}</button>
+    </form>
+  </div>
+  {% endif %}
+
+  <script>
+    // After a purchase prints, the month total climbs from its old sum to the new one.
+    (() => {
+      const row = document.querySelector('tr.printed'), fig = document.getElementById('figure');
+      if (!row || !fig || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const to = +fig.dataset.total, from = to - +row.dataset.amount, t0 = performance.now(), ms = 700;
+      const step = (t) => {
+        const k = Math.min(1, (t - t0) / ms), e = 1 - Math.pow(2, -10 * k);
+        fig.textContent = '¥' + Math.round(from + (to - from) * (k === 1 ? 1 : e)).toLocaleString('en-US');
+        if (k < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    })();
+  </script>
+{% endblock %}

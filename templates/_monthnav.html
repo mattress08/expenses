@@ -1,0 +1,14 @@
+{# Previous / pick / next month. Older is always to the left. On a phone the labels hide and the arrows stay. #}
+{% macro monthnav(endpoint, month) %}
+  <nav class="monthnav" aria-label="Month">
+    <a href="{{ url_for(endpoint, month=shift(month, -1)) }}">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span class="lbl">{{ shift(month, -1) | short_month }}</span></a>
+    <form method="get" action="{{ url_for(endpoint) }}">
+      <label class="visually-hidden" for="month-pick">Go to month</label>
+      <input id="month-pick" type="month" name="month" value="{{ month }}" onchange="this.form.submit()">
+      <noscript><button class="textbtn" type="submit">Show</button></noscript>
+    </form>
+    <a href="{{ url_for(endpoint, month=shift(month, 1)) }}"><span class="lbl">{{ shift(month, 1) | short_month }}</span>
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></a>
+  </nav>
+{% endmacro %}

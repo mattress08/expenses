@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-03T00:00:00Z",
+  "title": "Design System: Expenses",
+  "extensions": {
+    "colorMeta": {
+      "cover":       { "role": "primary",   "displayName": "Passbook Cover Green", "canonical": "#1f5a4c", "tonalRamp": ["#0d2a22", "#174438", "#1f5a4c", "#3f7b6b", "#6e9e8f", "#a3c3b6", "#d3e5dc", "#eef5f1"] },
+      "cover-deep":  { "role": "primary",   "displayName": "Deep Cover", "canonical": "#174438", "tonalRamp": ["#0d2a22", "#174438", "#1f5a4c", "#3f7b6b", "#6e9e8f", "#a3c3b6", "#d3e5dc", "#eef5f1"] },
+      "cover-ink":   { "role": "primary",   "displayName": "Cover Ink", "canonical": "#eef5f1", "tonalRamp": ["#0d2a22", "#174438", "#1f5a4c", "#3f7b6b", "#6e9e8f", "#a3c3b6", "#d3e5dc", "#eef5f1"] },
+      "cover-ink-2": { "role": "primary",   "displayName": "Faded Cover Ink", "canonical": "#bcd3c8", "tonalRamp": ["#0d2a22", "#174438", "#1f5a4c", "#3f7b6b", "#6e9e8f", "#a3c3b6", "#d3e5dc", "#eef5f1"] },
+      "seal":        { "role": "secondary", "displayName": "Vermilion Seal", "canonical": "#c43d2b", "tonalRamp": ["#4a150e", "#7d2318", "#a8331f", "#c43d2b", "#d9705f", "#e9a296", "#f3cdc6", "#f8e3df"] },
+      "seal-tint":   { "role": "secondary", "displayName": "Seal Tint", "canonical": "#f8e3df", "tonalRamp": ["#4a150e", "#7d2318", "#a8331f", "#c43d2b", "#d9705f", "#e9a296", "#f3cdc6", "#f8e3df"] },
+      "page":        { "role": "neutral",   "displayName": "Security Tint Page", "canonical": "#eaf2ec", "tonalRamp": ["#26332d", "#4a5b53", "#6f857a", "#9fb7aa", "#c0d3c8", "#d3e1d8", "#eaf2ec", "#f7faf7"] },
+      "tint":        { "role": "neutral",   "displayName": "Header Tint", "canonical": "#dbe8df", "tonalRamp": ["#26332d", "#4a5b53", "#6f857a", "#9fb7aa", "#c0d3c8", "#d3e1d8", "#eaf2ec", "#f7faf7"] },
+      "paper":       { "role": "neutral",   "displayName": "Printed Paper", "canonical": "#f7faf7", "tonalRamp": ["#26332d", "#4a5b53", "#6f857a", "#9fb7aa", "#c0d3c8", "#d3e1d8", "#eaf2ec", "#f7faf7"] },
+      "fresh":       { "role": "neutral",   "displayName": "Fresh Sheet", "canonical": "#ffffff", "tonalRamp": ["#26332d", "#4a5b53", "#6f857a", "#9fb7aa", "#c0d3c8", "#d3e1d8", "#eaf2ec", "#ffffff"] },
+      "ink":         { "role": "neutral",   "displayName": "Ink", "canonical": "#17201d", "tonalRamp": ["#0e1412", "#17201d", "#2f3b36", "#4f5d57", "#6d7b75", "#9fb0a8", "#d0dbd5", "#f2f6f4"] },
+      "ink-2":       { "role": "neutral",   "displayName": "Faded Ink", "canonical": "#4f5d57", "tonalRamp": ["#0e1412", "#17201d", "#2f3b36", "#4f5d57", "#6d7b75", "#9fb0a8", "#d0dbd5", "#f2f6f4"] },
+      "rule":        { "role": "neutral",   "displayName": "Ruling", "canonical": "#d3e1d8", "tonalRamp": ["#26332d", "#4a5b53", "#6f857a", "#9fb7aa", "#c0d3c8", "#d3e1d8", "#eaf2ec", "#f7faf7"] },
+      "field":       { "role": "neutral",   "displayName": "Field Line", "canonical": "#9fb7aa", "tonalRamp": ["#26332d", "#4a5b53", "#6f857a", "#9fb7aa", "#c0d3c8", "#d3e1d8", "#eaf2ec", "#f7faf7"] }
+    },
+    "typographyMeta": {
+      "figure":   { "displayName": "Figure", "purpose": "The one total per page (month or all time). 40px below 820px." },
+      "headline": { "displayName": "Headline", "purpose": "Page titles, section headings, wordmark, comparison figure." },
+      "body":     { "displayName": "Body", "purpose": "Table cells, meta lines, inputs, buttons." },
+      "label":    { "displayName": "Label", "purpose": "Table headers, primary buttons, active nav, total rows: body size at 700." }
+    },
+    "shadows": [],
+    "motion": [
+      { "name": "print", "value": "clip-path inset(0 100% 0 0) to inset(0) over 90ms steps(4, end), 70ms stagger per column", "purpose": "A newly printed ledger row draws across column by column like a printer head. Off under reduced motion." },
+      { "name": "count-up", "value": "700ms, ease-out-expo (1 - 2^(-10k))", "purpose": "The month figure climbs from its old total to the new one after a print. Off under reduced motion." },
+      { "name": "row-actions-reveal", "value": "opacity 120ms ease-out", "purpose": "Row actions fade in on row hover or focus-within on hover-capable desktops." }
+    ],
+    "breakpoints": [
+      { "name": "phone", "value": "820px" },
+      { "name": "dashboard-split", "value": "1100px" },
+      { "name": "edit-form", "value": "1000px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Print and Save. Cover green, square, bold.",
+      "html": "<button class=\"ds-btn\">Print</button>",
+      "css": ".ds-btn { font: 700 15px/1.5 'BIZ UDPGothic', system-ui, sans-serif; background: var(--cover, #1f5a4c); color: var(--fresh, #ffffff); border: 0; border-radius: 0; padding: 8px 18px; cursor: pointer; white-space: nowrap; } .ds-btn:hover { background: var(--cover-deep, #174438); } .ds-btn:active { transform: translateY(1px); } .ds-btn:focus-visible { outline: 2px solid var(--cover, #1f5a4c); outline-offset: 2px; }"
+    },
+    {
+      "name": "Danger Text Button",
+      "kind": "button",
+      "refersTo": "button-text-danger",
+      "description": "Removal only. Vermilion underlined text; label names exactly what is removed.",
+      "html": "<button class=\"ds-textbtn ds-danger\">Delete all 41 purchases in October 2026</button>",
+      "css": ".ds-textbtn { font: 400 15px/1.5 'BIZ UDPGothic', system-ui, sans-serif; background: none; border: 0; border-radius: 0; padding: 4px 6px; color: var(--cover, #1f5a4c); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; } .ds-danger { color: var(--seal, #c43d2b); } .ds-danger:hover { background: var(--seal-tint, #f8e3df); } .ds-textbtn:focus-visible { outline: 2px solid var(--cover, #1f5a4c); outline-offset: 2px; }"
+    },
+    {
+      "name": "Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Fresh white field, 1px field-line border, square; green on focus.",
+      "html": "<input class=\"ds-input\" placeholder=\"Name\">",
+      "css": ".ds-input { font: 400 15px/1.5 'BIZ UDPGothic', system-ui, sans-serif; color: var(--ink, #17201d); background: var(--fresh, #ffffff); border: 1px solid var(--field, #9fb7aa); border-radius: 0; padding: 7px 9px; width: 240px; } .ds-input:hover { border-color: var(--ink-2, #4f5d57); } .ds-input:focus { border-color: var(--cover, #1f5a4c); outline: 1px solid var(--cover, #1f5a4c); outline-offset: 0; } .ds-input::placeholder { color: #6d7b75; }"
+    },
+    {
+      "name": "Cover Rail",
+      "kind": "nav",
+      "refersTo": "rail",
+      "description": "The passbook cover: wordmark, pages (active by weight and deep cover), months oldest first with totals, current month reversed onto the page tint.",
+      "html": "<aside class=\"ds-rail\"><a class=\"ds-brand\" href=\"#\">Expenses</a><nav><a href=\"#\" aria-current=\"page\">Ledger</a><a href=\"#\">Dashboard</a></nav><h2>Months</h2><ul class=\"ds-months\"><li><a href=\"#\"><span>Sep 2026</span><span>¥88,410</span></a></li><li><a href=\"#\" aria-current=\"page\"><span>Oct 2026</span><span>¥97,320</span></a></li><li><a href=\"#\"><span>Nov 2026</span><span>¥85,291</span></a></li></ul></aside>",
+      "css": ".ds-rail { width: 248px; background: var(--cover, #1f5a4c); color: var(--cover-ink, #eef5f1); padding: 28px 0; font: 400 15px/1.5 'BIZ UDPGothic', system-ui, sans-serif; font-variant-numeric: tabular-nums; } .ds-brand { display: block; padding: 0 28px 24px; font-weight: 700; font-size: 18px; color: var(--cover-ink, #eef5f1); text-decoration: none; } .ds-rail nav a, .ds-months a { display: flex; justify-content: space-between; gap: 12px; padding: 9px 28px; color: var(--cover-ink, #eef5f1); text-decoration: none; } .ds-rail nav a:hover, .ds-months a:hover { background: var(--cover-deep, #174438); } .ds-rail nav a[aria-current] { font-weight: 700; background: var(--cover-deep, #174438); } .ds-rail h2 { font-size: 15px; font-weight: 700; color: var(--cover-ink-2, #bcd3c8); padding: 0 28px 8px; margin: 28px 0 0; } .ds-months { list-style: none; margin: 0; padding: 0; } .ds-months a[aria-current] { background: var(--page, #eaf2ec); color: var(--ink, #17201d); font-weight: 700; } .ds-rail a:focus-visible { outline: 2px solid var(--cover-ink, #eef5f1); outline-offset: -2px; }"
+    },
+    {
+      "name": "Printed Page",
+      "kind": "custom",
+      "refersTo": "table-row",
+      "description": "Signature ledger: tint header, paper rows on 1px ruling, running total in faded ink, closing reversed ink total row.",
+      "html": "<div class=\"ds-sheet\"><table class=\"ds-book\"><thead><tr><th>Date</th><th>Name</th><th>Classification</th><th class=\"ds-num\">Amount</th><th class=\"ds-num\">Running total</th></tr></thead><tbody><tr><td>Oct 3</td><td>Matsuya</td><td>food</td><td class=\"ds-num\">¥690</td><td class=\"ds-num ds-quiet\">¥690</td></tr><tr><td>Oct 3</td><td>Fuji Mart</td><td>supermarket</td><td class=\"ds-num\">¥2,459</td><td class=\"ds-num ds-quiet\">¥3,149</td></tr></tbody><tfoot><tr><td colspan=\"4\">October 2026 total</td><td class=\"ds-num\">¥3,149</td></tr></tfoot></table></div>",
+      "css": ".ds-sheet { background: var(--paper, #f7faf7); font: 400 15px/1.5 'BIZ UDPGothic', system-ui, sans-serif; font-variant-numeric: tabular-nums; color: var(--ink, #17201d); } .ds-book { width: 100%; border-collapse: collapse; } .ds-book th { text-align: left; font-weight: 700; color: var(--ink-2, #4f5d57); background: var(--tint, #dbe8df); padding: 10px 14px; white-space: nowrap; } .ds-book td { padding: 9px 14px; border-bottom: 1px solid var(--rule, #d3e1d8); } .ds-book tbody tr:hover td { background: var(--fresh, #ffffff); } .ds-num { text-align: right; white-space: nowrap; } .ds-quiet { color: var(--ink-2, #4f5d57); } .ds-book tfoot td { background: var(--ink, #17201d); color: var(--fresh, #ffffff); font-weight: 700; border: 0; }"
+    },
+    {
+      "name": "Entry Line",
+      "kind": "custom",
+      "refersTo": "entry-line",
+      "description": "The last row of the page where the next purchase prints: fresh white, 2px green top rule, inline fields, green Print.",
+      "html": "<div class=\"ds-entry\"><input type=\"date\" value=\"2026-10-03\"><input placeholder=\"Name\"><input placeholder=\"e.g. food\"><input placeholder=\"¥\"><button>Print</button></div>",
+      "css": ".ds-entry { display: grid; grid-template-columns: 150px 1fr 140px 100px auto; gap: 12px; background: var(--fresh, #ffffff); border-top: 2px solid var(--cover, #1f5a4c); padding: 10px 14px; font: 400 15px/1.5 'BIZ UDPGothic', system-ui, sans-serif; } .ds-entry input { font: inherit; color: var(--ink, #17201d); background: var(--fresh, #ffffff); border: 1px solid var(--field, #9fb7aa); border-radius: 0; padding: 7px; min-width: 0; } .ds-entry input:focus { border-color: var(--cover, #1f5a4c); outline: 1px solid var(--cover, #1f5a4c); } .ds-entry button { font: 700 15px/1.5 'BIZ UDPGothic', system-ui, sans-serif; background: var(--cover, #1f5a4c); color: var(--fresh, #ffffff); border: 0; border-radius: 0; padding: 8px 18px; cursor: pointer; } .ds-entry button:hover { background: var(--cover-deep, #174438); } .ds-entry button:focus-visible { outline: 2px solid var(--cover, #1f5a4c); outline-offset: 2px; }"
+    },
+    {
+      "name": "Month Chart",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Plain CSS bars on paper over a 2px ink baseline. Bars are links, so green; the selected month is ink.",
+      "html": "<div class=\"ds-chart\"><a class=\"ds-col\" href=\"#\"><span class=\"ds-v\">¥88,410</span><span class=\"ds-b\" style=\"height:75%\"></span></a><a class=\"ds-col\" href=\"#\" aria-current=\"page\"><span class=\"ds-v\">¥97,320</span><span class=\"ds-b\" style=\"height:82%\"></span></a><a class=\"ds-col\" href=\"#\"><span class=\"ds-v\">¥85,291</span><span class=\"ds-b\" style=\"height:72%\"></span></a></div>",
+      "css": ".ds-chart { display: flex; align-items: flex-end; gap: 2px; height: 220px; background: var(--paper, #f7faf7); padding: 20px 20px 0; border-bottom: 2px solid var(--ink, #17201d); font: 400 15px/1.5 'BIZ UDPGothic', system-ui, sans-serif; font-variant-numeric: tabular-nums; } .ds-col { flex: 0 1 140px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; text-decoration: none; color: var(--ink-2, #4f5d57); } .ds-v { text-align: center; padding-bottom: 6px; white-space: nowrap; } .ds-b { background: var(--cover, #1f5a4c); min-height: 2px; } .ds-col:hover .ds-b { background: var(--cover-deep, #174438); } .ds-col[aria-current] .ds-b { background: var(--ink, #17201d); } .ds-col[aria-current] .ds-v { color: var(--ink, #17201d); font-weight: 700; } .ds-col:focus-visible { outline: 2px solid var(--cover, #1f5a4c); outline-offset: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Passbook",
+    "overview": "Each month is a page of a bank passbook (通帳). A green cover holds the book together on the left; the page is a pale security tint; purchases print onto near-white paper lines, oldest first, with a running-total column that climbs like a balance. The month closes on its total, printed in reversed ink. Nothing floats, nothing is rounded, and the table columns are the layout grid.\n\nThe world is calm and dense, built for entering a batch of card purchases in a row from the keyboard and then reading the month back. Rank comes from weight and from one reversal, never from more sizes. Colour is functional: cover green appears only where something can be done, vermilion only where something is removed. Light only; there is no dark mode.\n\nMotion is a single signature: a newly entered purchase prints across its line column by column, stepped like a printer head, and the month total counts up to its new sum. Both are skipped under reduced motion. There are no rasters, logos, or illustrations, and none should be invented.",
+    "keyCharacteristics": [
+      "Green cover rail on the left, the only moving part; the main area is the page.",
+      "Three type sizes (56 / 18 / 15) in BIZ UDPGothic, tabular figures everywhere.",
+      "Square corners throughout; flat tonal layering, no shadows.",
+      "Tables are the content: tint header, paper rows, 1px rules, reversed ink total row.",
+      "Green means \"you can act\"; vermilion means \"this removes\"."
+    ],
+    "rules": [
+      { "name": "The Act-Or-Remove Rule", "body": "Cover green appears only where something can be done; vermilion only where something is removed. A non-interactive bar or figure is ink or faded ink, never green (the dashboard's share bars are faded ink for this reason).", "section": "colors" },
+      { "name": "The One Reversal Rule", "body": "Ink as a background is reserved for the closing total row of a table. Nothing else is reversed onto ink.", "section": "colors" },
+      { "name": "The Three Sizes Rule", "body": "There are exactly three sizes (figure, head, body). New hierarchy is made with weight (400/700), faded ink, or the reversed total row, never a fourth size.", "section": "typography" },
+      { "name": "The Tabular Rule", "body": "All figures use tabular numerals and right-align in their column. Yen is always written `¥1,234`, whole yen.", "section": "typography" },
+      { "name": "The Oldest-First Rule", "body": "Rows print oldest at top, newest at the bottom next to the entry line; the running total climbs down the page and the month's closing balance sits in the Running total column of the total row.", "section": "layout" },
+      { "name": "The Paper-Not-Card Rule", "body": "Surfaces are sheets of paper on the page, not raised cards. Separate them with tone and rules, never shadow or radius.", "section": "elevation" }
+    ],
+    "dos": [
+      "**Do** use cover green only on things that can be clicked or typed into, and vermilion only for removal.",
+      "**Do** keep to three sizes (56 / 18 / 15) and rank with weight, faded ink, or the reversed total row.",
+      "**Do** use tabular figures and right-align every amount.",
+      "**Do** list rows and months oldest first, older up or left.",
+      "**Do** mark active navigation with weight and deep cover.",
+      "**Do** let names and classifications wrap; truncate only notes, with the full text in `title`.",
+      "**Do** keep every corner square and every surface flat.",
+      "**Do** draw arrows and icons as inline SVG strokes."
+    ],
+    "donts": [
+      "**Don't** add shadows, radius, or raised cards; sheets sit flat on the page.",
+      "**Don't** use green for bars, figures, or decoration that cannot be acted on.",
+      "**Don't** mark the active nav item with a side stripe.",
+      "**Don't** add a fourth type size.",
+      "**Don't** use vermilion for anything that does not remove data.",
+      "**Don't** add a dark mode, logos, or imagery."
+    ]
+  }
+}

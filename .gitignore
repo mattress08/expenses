@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+# personal spending data: never commit
+expenses.db
+*.xlsx
+# impeccable working files that contain screenshots of real data, or temp state
+.impeccable/review/
+.impeccable/mocks/
+.impeccable/questions/
+.impeccable/hook.cache.json

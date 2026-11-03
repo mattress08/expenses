@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% from "_monthnav.html" import monthnav %}
+{% set all = month == 'all' %}
+{% block title %}Dashboard · {{ 'All time' if all else month | month_name }}{% endblock %}
+{% block style %}
+  section { margin-top: 48px; }
+  section h2 { margin-bottom: 14px; }
+  .chart { display: flex; align-items: flex-end; gap: 2px; height: 220px; background: var(--paper);
+           padding: 20px 20px 0; border-bottom: 2px solid var(--ink); }
+  .col { flex: 0 1 140px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end;
+         text-decoration: none; color: var(--ink-2); }
+  .col .v { text-align: center; padding-bottom: 6px; white-space: nowrap; }
+  .col .b { background: var(--cover); min-height: 2px; }
+  .col:hover .b { background: var(--cover-deep); }
+  .col[aria-current] .b { background: var(--ink); }
+  .col[aria-current] .v { color: var(--ink); font-weight: 700; }
+  .labels { display: flex; gap: 2px; padding: 8px 20px 0; }
+  .labels span { flex: 0 1 140px; text-align: center; color: var(--ink-2); white-space: nowrap; }
+  .labels span.sel { color: var(--ink); font-weight: 700; }
+  .split { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 0 40px; }
+  .split > div > section:first-child { margin-top: 48px; }
+  .share { display: flex; align-items: center; gap: 10px; }
+  .share .b { height: 12px; background: var(--ink-2); min-width: 2px; }  /* not clickable, so not cover green */
+  .split td:first-child { white-space: nowrap; }
+  .share span { color: var(--ink-2); min-width: 3ch; }
+  .none { background: var(--paper); padding: 20px 14px; color: var(--ink-2); }
+  @media (max-width: 1100px) { .split { grid-template-columns: minmax(0, 1fr); } .split > div > section:first-child { margin-top: 48px; } }
+{% endblock %}
+{% block content %}
+  {% if not all %}{{ monthnav('dashboard', month) }}{% endif %}
+
+  <header class="head">
+    <div>
+      <h1>{{ 'All time' if all else month | month_name }}</h1>
+      <p class="figure">{{ s.total | yen }}</p>
+      <p class="meta">
+        {{ s.count }} purchase{{ '' if s.count == 1 else 's' }} · {{ s.per_day | yen }} a day over {{ s.days }} days
+        {%- if all %} · {{ s.per_month | yen }} a month over {{ monthly | length }} months{% endif %}
+      </p>
+    </div>
+    <p class="cmp">
+      {% if all %}
+        {% if s.top_month %}<strong>{{ s.top_month.total | yen }}</strong>biggest month, {{ s.top_month.month | month_name }}{% endif %}
+      {% elif not s.total %}
+        <strong>Nothing yet</strong>{{ s.prev_total | yen }} in {{ s.prev_month | month_name }}{% if s.is_current %}, first {{ s.days }} days{% endif %}
+      {% elif s.change is none %}
+        <strong>Nothing to compare</strong>no purchases in {{ s.prev_month | month_name }}{% if s.is_current %} by day {{ s.days }}{% endif %}
+      {% else %}
+        <strong>{{ '+' if s.change > 0 else ('−' if s.change < 0 else '') }}{{ s.change | abs }}%</strong>
+        vs {{ s.prev_total | yen }} in {{ s.prev_month | month_name }}{% if s.is_current %}, first {{ s.days }} days{% endif %}
+      {% endif %}
+    </p>
+  </header>
+
+  {% if monthly %}
+  <section aria-labelledby="h-months">
+    <h2 id="h-months">Spent per month</h2>
+    <div class="chart">
+      {% for m in monthly %}
+      <a class="col" href="{{ url_for('dashboard', month=m.month) }}" {% if m.month == month %}aria-current="page"{% endif %}
+         aria-label="{{ m.month | month_name }}: {{ m.total | yen }}, {{ m.n }} purchases">
+        <span class="v">{{ m.total | yen }}</span>
+        <span class="b" style="height: {{ (82 * m.total / monthly_max) | round(1) }}%"></span>
+      </a>
+      {% endfor %}
+    </div>
+    <div class="labels" aria-hidden="true">
+      {% for m in monthly %}<span {% if m.month == month %}class="sel"{% endif %}>{{ m.month | month_name }}</span>{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <div class="split">
+    <div>
+      <section aria-labelledby="h-class">
+        <h2 id="h-class">By classification</h2>
+        {% if by_class %}
+        <div class="sheet"><table>
+          <thead><tr><th scope="col">Classification</th><th scope="col" class="num">Purchases</th><th scope="col">Share</th><th scope="col" class="num">Amount</th></tr></thead>
+          <tbody>
+          {% for c in by_class %}
+            <tr>
+              <td>{{ c.classification }}</td>
+              <td class="num quiet">{{ c.n }}</td>
+              <td><span class="share"><span class="b" style="width: {{ (160 * c.total / class_max) | round(1) }}px"></span>
+                  <span>{{ (100 * c.total / s.total) | round | int }}%</span></span></td>
+              <td class="num">{{ c.total | yen }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+          <tfoot><tr><td>Total</td><td class="num">{{ s.count }}</td><td></td><td class="num">{{ s.total | yen }}</td></tr></tfoot>
+        </table></div>
+        {% else %}<p class="none">No purchases {{ 'yet' if all else 'in ' ~ (month | month_name) }}.</p>{% endif %}
+      </section>
+    </div>
+    <div>
+      <section aria-labelledby="h-big">
+        <h2 id="h-big">Biggest purchases</h2>
+        {% if biggest %}
+        <div class="sheet"><table>
+          <thead><tr><th scope="col">Date</th><th scope="col">Name</th><th scope="col" class="num">Amount</th></tr></thead>
+          <tbody>
+          {% for r in biggest %}
+            <tr><td class="quiet">{{ r.date | short_date }}{% if all %} {{ r.date[:4] }}{% endif %}</td><td>{{ r.name }}</td><td class="num">{{ r.amount | yen }}</td></tr>
+          {% endfor %}
+          </tbody>
+        </table></div>
+        {% else %}<p class="none">Nothing yet.</p>{% endif %}
+      </section>
+
+      <section aria-labelledby="h-places">
+        <h2 id="h-places">Where you go most</h2>
+        {% if places %}
+        <div class="sheet"><table>
+          <thead><tr><th scope="col">Name</th><th scope="col" class="num">Visits</th><th scope="col" class="num">Total</th></tr></thead>
+          <tbody>
+          {% for p in places %}
+            <tr><td>{{ p.place }}</td><td class="num quiet">{{ p.n }}</td><td class="num">{{ p.total | yen }}</td></tr>
+          {% endfor %}
+          </tbody>
+        </table></div>
+        {% else %}<p class="none">No place visited twice {{ 'yet' if all else 'this month' }}.</p>{% endif %}
+      </section>
+    </div>
+  </div>
+{% endblock %}
